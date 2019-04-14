@@ -118,8 +118,25 @@ group by district;
 ----------------------------------------------------------------------
 ---- Answer to 4.1.6 STARTS HERE -------------------------------------
 ----------------------------------------------------------------------
-select name, continent,Indepyear from country
+select name, Indepyear, 
+case
+	when Indepyear is null 
+    then "N/A" 
+    when cast(year(curdate()) as signed) - Indepyear < 10 
+    then Concat("New ",GovernmentForm)
+    when (cast(year(curdate()) as signed) - Indepyear >= 10)  AND (cast(year(curdate()) as signed) - Indepyear < 50)
+    then Concat("Modern ",GovernmentForm)
+    when (cast(year(curdate()) as signed) - Indepyear >= 50)  AND (cast(year(curdate()) as signed) - Indepyear < 100)
+    then Concat("Early ",GovernmentForm)
+	when (cast(year(curdate()) as signed) - Indepyear >= 100)
+    then Concat("Old ",GovernmentForm)
+    else "old"    
+end Description
+from country
 order by Indepyear;
+----------------------------------------------------------------------
+---- Answer to 4.1.6 ENDs HERE ---------------------------------------
+----------------------------------------------------------------------
 
 
 
