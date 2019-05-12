@@ -1,0 +1,17 @@
+// Applied Databases  
+// Project  
+// Author Somu
+// Date 12th May
+// Section 4.3
+// 4.3.1 Average Engine Size Give the MongoDB command to find the average engine size. 
+// Query for 4.3.1 starts here----------------------------------------------
+db.MongoDB.aggregate([ { $match: {"car.engineSize": {$exists:true}}}, {$group: {_id: "car.reg", Average: {$avg:"$car.engineSize"}}} ]);
+// Query for 4.3.1 ends here----------------------------------------------
+// Categorise County Populations 
+// Query for 4.3.2 starts here----------------------------------------------
+ db.MongoDB.aggregate([ { $bucket: { groupBy: "$pop", boundaries: [0,50000,100000,150000], default: "other", output:{    "counties": {$push: "$name"}} }} ]);
+// Query for 4.3.2 ends here-------------------------------------------------
+//4.3.3 Redefine County Populations
+// Query for 4.3.2 Starts here----------------------------------------------
+db.MongoDB.aggregate([ {$match: {"pop": {$exists:true}}}, {$addFields: {"pop": {$cond: { if: { $lte: [ "$pop", 100000 ] }, then: "Small County", else: "Big County" }      }}} ])
+// Query for 4.3.2 ends here----------------------------------------------
