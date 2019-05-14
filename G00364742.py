@@ -32,7 +32,7 @@ def menu():
 
 Mongoclnt = None
 
-def Mongoconnect():
+def Mongoconnect(csize):
     global Mongoclnt
     MONGODB_HOST = 'localhost'
     MONGODB_PORT = 27017
@@ -42,21 +42,28 @@ def Mongoconnect():
     Mongoclnt.admin.command('ismaster')
     db = Mongoclnt['MongoDB']
     doc = db["MongoDB"]
-    query={"car.engineSize":1.3}
+    query="{'car.engineSize': " + str(csize) + "}"
+    print(query)
     car=doc.find(query)
     for p in car:
         print(p)
 
+global dfp, df
+dfp =""
+df = pd.DataFrame()
+
+def globalSet ():
+    global dfp
+    dfp = "2"
 
 def DBconnection(query,choice,code,param1):
     try:
         connection = mysql.connector.connect(host='localhost',database='world', user='root', password='Somu@1975')
         cursor = connection.cursor(prepared=True)
-        global dfp
-        dfp = "1"
+        global dfp,df
         if (choice == "6" or choice == "7") and dfp != "2" :
             df = pd.read_sql_query(query, connection)
-            dfp ="2"
+            globalSet()
 
         if choice == "1" :
             cursor.execute(query) 
@@ -90,13 +97,6 @@ def DBconnection(query,choice,code,param1):
             elif param1 == "=":
                 df1 = df[(df["population"] == int(code)) ].loc[:,["Name","Continent","population","HeadofState"]]
             print(tabulate(df1, headers="keys",tablefmt="orgtbl"))
-            # cursor.execute(query) 
-            # names = list(map(lambda x: x[0], cursor.description))
-            # print("-----------------------------------------------------------------------------------------------------------")
-            # print("{:^30} | {:^20} | {:^20} | {:^20} ".format(names[0],names[1],names[2],names[3]))
-            # print("-----------------------------------------------------------------------------------------------------------")
-            # for (Name, Continent,population,HeadofState) in cursor:
-            #     print("{:<30} | {:^20} | {:>20} | {:<20}".format(Name, Continent,population,HeadofState))
 
     except mysql.connector.Error as error :
         if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -188,7 +188,10 @@ def main():
                     displaymenu()
             DBconnection (query, choice, Code,param1)
         elif choice == "4":
-            Mongoconnect()
+            print("Enter car engine size")
+            print("---------------------")
+            csize = input("Enter Car Engine Size :")
+            Mongoconnect(csize)
             
 
         else:
