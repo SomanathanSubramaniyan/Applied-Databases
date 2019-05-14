@@ -3,10 +3,16 @@
 # Section 4.4 - Python program answers
 # Author : Somu
 
-#!/usr/bin/python
+#mySQL modules import
 import mysql.connector
 from mysql.connector import Error
 from mysql.connector import errorcode
+import pandas as pd
+#Mongo modules import
+import pymongo
+from pymongo import MongoClient
+#Pandas printing module
+from tabulate import tabulate
 
 # This function will display a Menu as requested in the project specification
 def menu():
@@ -24,10 +30,34 @@ def menu():
     print("7  -  View Countries by population")
     print("x  -  Exit application")
 
-def DBconnection(query,choice,code):
+Mongoclnt = None
+
+def Mongoconnect():
+    global Mongoclnt
+    MONGODB_HOST = 'localhost'
+    MONGODB_PORT = 27017
+    DB_NAME = 'MongoDB'
+    COLLECTION_NAME = 'MongoDB'
+    Mongoclnt = MongoClient(MONGODB_HOST,MONGODB_PORT)
+    Mongoclnt.admin.command('ismaster')
+    db = Mongoclnt['MongoDB']
+    doc = db["MongoDB"]
+    query={"car.engineSize":1.3}
+    car=doc.find(query)
+    for p in car:
+        print(p)
+
+
+def DBconnection(query,choice,code,param1):
     try:
         connection = mysql.connector.connect(host='localhost',database='world', user='root', password='Somu@1975')
         cursor = connection.cursor(prepared=True)
+        global dfp
+        dfp = "1"
+        if (choice == "6" or choice == "7") and dfp != "2" :
+            df = pd.read_sql_query(query, connection)
+            dfp ="2"
+
         if choice == "1" :
             cursor.execute(query) 
             names = list(map(lambda x: x[0], cursor.description))
@@ -48,6 +78,25 @@ def DBconnection(query,choice,code):
             cursor.execute(query) 
             connection.commit
             print("**** RESULT ***** The new city record is inserted into the table")
+        elif choice == "6" :
+            df1 = df[df["Name"].str.contains(code)].loc[:,["Name","Continent","population","HeadofState"]]
+            #print tabulate(df1.to_string(index=False))
+            print(tabulate(df1, headers="keys",tablefmt="orgtbl"))
+        elif choice == "7":
+            if param1 == ">":
+                df1 = df[(df["population"] > int(code)) ].loc[:,["Name","Continent","population","HeadofState"]]
+            elif param1 == "<":
+                df1 = df[(df["population"] < int(code)) ].loc[:,["Name","Continent","population","HeadofState"]]
+            elif param1 == "=":
+                df1 = df[(df["population"] == int(code)) ].loc[:,["Name","Continent","population","HeadofState"]]
+            print(tabulate(df1, headers="keys",tablefmt="orgtbl"))
+            # cursor.execute(query) 
+            # names = list(map(lambda x: x[0], cursor.description))
+            # print("-----------------------------------------------------------------------------------------------------------")
+            # print("{:^30} | {:^20} | {:^20} | {:^20} ".format(names[0],names[1],names[2],names[3]))
+            # print("-----------------------------------------------------------------------------------------------------------")
+            # for (Name, Continent,population,HeadofState) in cursor:
+            #     print("{:<30} | {:^20} | {:>20} | {:<20}".format(Name, Continent,population,HeadofState))
 
     except mysql.connector.Error as error :
         if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -71,35 +120,38 @@ def DBconnection(query,choice,code):
 def displaymenu():
     print("This is not a valid choice. You can only choose from the above options")
     input("\nPress enter to continue...")
-    main()
 
 def main():
     while True:
         menu()
         choice = input("Choice : --> ")
+        Code,param1 = "",""
         if choice == "x":
             print("Bye - Program Terminate now and welcome back anytime!")
             return
         elif choice == "1":
             query= "select * from city limit 15"
-            DBconnection (query, choice,"")
+            DBconnection (query, choice,Code,param1)
         elif choice == "2":
             print("Cities by Population")
             print("--------------------")
-            Comparison = input("Enter  <, > or =   :")
-            if Comparison == "<" or Comparison == ">" or Comparison == "=":
-                query = "select * from city where population" + Comparison
-            else:
-                displaymenu()
-                return
-            Value= input("Enter Population :")
-            try:
-                Value = int(Value)
-            except ValueError:
-                displaymenu()
-                return
-            query = "select * from city where population" + Comparison + str(Value)
-            DBconnection (query, choice,"")
+           
+            while True:
+                Comparison = input("Enter  <, > or =   :")
+                if Comparison == "<" or Comparison == ">" or Comparison == "=":
+                    query = "select * from city where population" + Comparison
+                    break
+                else:
+                    displaymenu()
+            
+            while True:
+                Value= input("Enter Population :")
+                if Value.isdigit() == True:
+                    query = query +  str(Value)
+                    break
+                else:
+                    displaymenu()
+            DBconnection (query, choice,Code,param1)
         elif choice == "3":
             print("Add New City")
             print("------------")
@@ -108,7 +160,35 @@ def main():
             district= input("District :")
             pop= input("Population :")
             query = "Insert INTO city (name, countrycode,district,population) VALUES ('" + City + "','" + Code + "','" + district + "',"+ str(pop)+")"
-            DBconnection (query, choice, Code)
+            DBconnection (query, choice, Code,param1)
+        elif choice == "6":
+            print("Countries by Name")
+            print("-----------------")
+            Ctyname = input("Enter Country Name :")
+            query = "select code, Name, Continent,population,HeadofState from country" 
+            Code=Ctyname
+            DBconnection (query, choice, Code,param1)
+        elif choice == "7":
+            print("Countries by Population")
+            print("-----------------------")
+            query = "select code, Name, Continent,population,HeadofState from country" 
+            while True:
+                Comparison = input("Enter  <, > or =   :")
+                if Comparison == "<" or Comparison == ">" or Comparison == "=":
+                    param1=Comparison
+                    break
+                else:
+                    displaymenu()
+            while True:
+                Value= input("Enter Population :")
+                if Value.isdigit() == True:
+                    Code = Value
+                    break
+                else:
+                    displaymenu()
+            DBconnection (query, choice, Code,param1)
+        elif choice == "4":
+            Mongoconnect()
             
 
         else:
