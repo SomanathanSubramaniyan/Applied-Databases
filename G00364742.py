@@ -30,28 +30,33 @@ def menu():
     print("7  -  View Countries by population")
     print("x  -  Exit application")
 
-Mongoclnt = None
-
-def Mongoconnect(csize):
-    global Mongoclnt
-    MONGODB_HOST = 'localhost'
-    MONGODB_PORT = 27017
-    DB_NAME = 'MongoDB'
-    COLLECTION_NAME = 'MongoDB'
-    Mongoclnt = MongoClient(MONGODB_HOST,MONGODB_PORT)
-    Mongoclnt.admin.command('ismaster')
-    db = Mongoclnt['MongoDB']
-    doc = db["MongoDB"]
-    query="{'car.engineSize': " + str(csize) + "}"
-    print(query)
-    car=doc.find(query)
-    for p in car:
-        print(p)
-
+myclient = None
 global dfp, df
 dfp =""
 df = pd.DataFrame()
 
+def Mongoconnect(csize,choice,id,reg,size):
+    try:
+        global myclient
+        myclient =pymongo.MongoClient(host = "localhost",port=27017)
+        myclient.admin.command('ismaster')
+        mydb = myclient['docs']
+        docs = mydb["docs"]
+        if choice == "4":
+            query = {"car.engineSize":float(csize)}
+            car = docs.find(query)
+            for p in car:
+                print ('{0} | {1} | {2}  '.format(p["_id"],p["car"],p["addresses"]))
+        if choice == "5":
+            query={"_id":int(id), "car": { "reg":reg,"engineSize":float(size)}}
+            x = docs.insert_one(query)
+            query = {"_id":int(id)}
+            car = docs.find(query)
+            for p in car:
+                print (p)
+    except :
+        print ("******Error Occurred while executing Mongo commands******")
+  
 def globalSet ():
     global dfp
     dfp = "2"
@@ -188,10 +193,23 @@ def main():
                     displaymenu()
             DBconnection (query, choice, Code,param1)
         elif choice == "4":
-            print("Enter car engine size")
-            print("---------------------")
-            csize = input("Enter Car Engine Size :")
-            Mongoconnect(csize)
+            print("show cars by engine size")
+            print("------------------------")
+            while True:
+                csize = input("Enter Car Engine Size :")
+                if csize.isdigit() == True:
+                    csize = csize
+                    break
+                else:
+                    displaymenu()
+            Mongoconnect(csize,choice,"","","")
+        elif choice == "5":
+            print("Add New Car")
+            print("-----------")
+            id= input("_ids:")
+            reg= input("Enter reg :")
+            size= input("Enter Size :")
+            Mongoconnect("",choice,id,reg,size)
             
 
         else:
